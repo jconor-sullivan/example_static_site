@@ -4,7 +4,6 @@ import { Sidebar } from './components/Sidebar';
 import { ChatWindow, ChatMessage } from './components/ChatWindow';
 import { PillDisplay } from './components/PillDisplay';
 import { MOCK_DOCUMENTS } from './components/DocumentLibrary';
-import { Button } from './components/ui/button';
 import { SaveNestModal } from './components/SaveNestModal';
 import { Logo } from './components/Logo';
 import { DarkModeToggle } from './components/DarkModeToggle';
@@ -15,16 +14,16 @@ export interface ParametricPill {
   value: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  items: CategoryItem[];
-}
-
 export interface CategoryItem {
   id: string;
   name: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  icon?: string;
+  items: CategoryItem[];
 }
 
 export interface SavedNest {
@@ -63,8 +62,40 @@ export default function App() {
   const [savedNests, setSavedNests] = useState<SavedNest[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [sectionOrder, setSectionOrder] = useState<string[]>(['Sites', 'Docs', 'Nests']); // Order of sections in sidebar
+  
+  // Default categories with sample items
+  const [categories, setCategories] = useState<Category[]>([
+    {
+      id: 'sites',
+      name: 'Sites',
+      icon: '🔗',
+      items: [
+        { id: 'site-1', name: 'GitHub Repository' },
+        { id: 'site-2', name: 'Research Hub' },
+        { id: 'site-3', name: 'Documentation Portal' },
+        { id: 'site-4', name: 'Reddit Communities' }
+      ]
+    },
+    {
+      id: 'docs',
+      name: 'Docs',
+      icon: '📄',
+      items: [
+        { id: 'doc-1', name: 'API Documentation' },
+        { id: 'doc-2', name: 'User Guide' },
+        { id: 'doc-3', name: 'Technical Spec' },
+        { id: 'doc-4', name: 'PRD Version 2.1' }
+      ]
+    },
+    {
+      id: 'nests',
+      name: 'Nests',
+      icon: '📌',
+      items: []
+    }
+  ]);
+  
+  const [sectionOrder, setSectionOrder] = useState<string[]>(['sites', 'docs', 'nests']);
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     pills: [],
@@ -95,12 +126,12 @@ export default function App() {
     setSavedNests(savedNests.filter(nest => nest.id !== nestId));
   };
 
-  const handleSidebarItemSelect = (type: 'Sites' | 'Docs' | 'Nests', value: string) => {
+  const handleSidebarItemSelect = (categoryName: string, itemName: string) => {
     // Add pill to search
     const newPill: ParametricPill = {
       id: Date.now().toString(),
-      type,
-      value
+      type: categoryName,
+      value: itemName
     };
     setFilters({
       ...filters,
@@ -213,13 +244,10 @@ export default function App() {
                 <SearchBar 
                   filters={filters} 
                   onFiltersChange={setFilters}
-                  documents={MOCK_DOCUMENTS.map(doc => ({ id: doc.id, title: doc.title }))}
-                  savedNests={savedNests}
                   onKeyPress={handleKeyPress}
                   onSave={() => setShowSaveModal(true)}
                   onSubmit={handleSubmitPrompt}
                   categories={categories}
-                  sectionOrder={sectionOrder}
                 />
               </div>
             </div>
@@ -243,14 +271,10 @@ export default function App() {
               <SearchBar 
                 filters={filters} 
                 onFiltersChange={setFilters}
-                documents={MOCK_DOCUMENTS.map(doc => ({ id: doc.id, title: doc.title }))}
-                savedNests={savedNests}
                 onKeyPress={handleKeyPress}
-                hidePillsInInput={true}
                 onSave={() => setShowSaveModal(true)}
                 onSubmit={handleSubmitPrompt}
                 categories={categories}
-                sectionOrder={sectionOrder}
               />
               
               {/* Active Pills Display */}
