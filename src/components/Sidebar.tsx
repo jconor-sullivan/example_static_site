@@ -20,6 +20,9 @@ export function Sidebar(props: SidebarProps) {
   });
   const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
   const [showEditModal, setShowEditModal] = React.useState(false);
+  const [draggedCategoryId, setDraggedCategoryId] = React.useState<string | null>(null);
+  const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
+  const [draggedFromCategoryId, setDraggedFromCategoryId] = React.useState<string | null>(null);
 
   const toggleSection = (categoryId: string) => {
     setExpandedSections(prev => ({
@@ -58,16 +61,84 @@ export function Sidebar(props: SidebarProps) {
     props.onCategoriesChange([...props.categories, newCategory]);
   };
 
+  const handleCategoryDragStart = (e: React.DragEvent, categoryId: string) => {
+    setDraggedCategoryId(categoryId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleCategoryDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleCategoryDrop = (e: React.DragEvent, targetCategoryId: string) => {
+    e.preventDefault();
+    if (!draggedCategoryId || draggedCategoryId === targetCategoryId) return;
+
+    const draggedIndex = props.categories.findIndex(c => c.id === draggedCategoryId);
+    const targetIndex = props.categories.findIndex(c => c.id === targetCategoryId);
+
+    const newCategories = [...props.categories];
+    const [draggedCategory] = newCategories.splice(draggedIndex, 1);
+    newCategories.splice(targetIndex, 0, draggedCategory);
+
+    props.onCategoriesChange(newCategories);
+    setDraggedCategoryId(null);
+  };
+
+  const handleItemDragStart = (e: React.DragEvent, categoryId: string, itemId: string) => {
+    setDraggedItemId(itemId);
+    setDraggedFromCategoryId(categoryId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleItemDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleItemDrop = (e: React.DragEvent, targetCategoryId: string, targetItemId: string) => {
+    e.preventDefault();
+    if (!draggedItemId || !draggedFromCategoryId) return;
+
+    const updatedCategories = props.categories.map(cat => {
+      if (cat.id === draggedFromCategoryId && cat.id === targetCategoryId) {
+        // Reorder within same category
+        const draggedIndex = cat.items.findIndex(i => i.id === draggedItemId);
+        const targetIndex = cat.items.findIndex(i => i.id === targetItemId);
+
+        const newItems = [...cat.items];
+        const [draggedItem] = newItems.splice(draggedIndex, 1);
+        newItems.splice(targetIndex, 0, draggedItem);
+
+        return { ...cat, items: newItems };
+      }
+      return cat;
+    });
+
+    props.onCategoriesChange(updatedCategories);
+    setDraggedItemId(null);
+    setDraggedFromCategoryId(null);
+  };
+
   const renderSection = (category: Category) => {
     const isExpanded = expandedSections[category.id] ?? true;
 
     return (
-      <div key={category.id} style={{ marginBottom: '16px' }}>
+      <div
+        key={category.id}
+        style={{ marginBottom: '16px' }}
+        draggable
+        onDragStart={(e) => handleCategoryDragStart(e, category.id)}
+        onDragOver={handleCategoryDragOver}
+        onDrop={(e) => handleCategoryDrop(e, category.id)}
+        onDragEnd={() => setDraggedCategoryId(null)}
+      >
         <div
           style={{
             width: '100%',
             padding: '12px 8px',
-            backgroundColor: 'transparent',
+            backgroundColor: draggedCategoryId === category.id ? '#f0f0f0' : 'transparent',
             textAlign: 'left',
             fontSize: '14px',
             fontWeight: '600',
@@ -75,7 +146,11 @@ export function Sidebar(props: SidebarProps) {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            fontFamily: 'inherit'
+            fontFamily: 'inherit',
+            borderRadius: '4px',
+            cursor: 'grab',
+            opacity: draggedCategoryId === category.id ? 0.6 : 1,
+            transition: 'all 0.2s'
           }}
         >
           <button
@@ -135,24 +210,44 @@ export function Sidebar(props: SidebarProps) {
         {isExpanded && (
           <ul style={{ listStyle: 'none', paddingLeft: '8px' }}>
             {category.items.map((item) => (
-              <li key={item.id} style={{ marginBottom: '4px' }}>
+              <li
+                key={item.id}
+                style={{ marginBottom: '4px' }}
+                draggable
+                onDragStart={(e) => handleItemDragStart(e, category.id, item.id)}
+                onDragOver={handleItemDragOver}
+                onDrop={(e) => handleItemDrop(e, category.id, item.id)}
+                onDragEnd={() => {
+                  setDraggedItemId(null);
+                  setDraggedFromCategoryId(null);
+                }}
+              >
                 <button
                   onClick={() => props.onSelectItem(category.name, item.name)}
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    backgroundColor: '#f5f5f5',
-                    border: '1px solid #e0e0e0',
+                    backgroundColor: draggedItemId === item.id ? '#e3f2fd' : '#f5f5f5',
+                    border: draggedItemId === item.id ? '2px solid #2196f3' : '1px solid #e0e0e0',
                     borderRadius: '4px',
                     textAlign: 'left',
-                    cursor: 'pointer',
+                    cursor: 'grab',
                     fontSize: '13px',
                     color: 'var(--md-on-surface)',
-                    transition: 'background-color 0.2s',
-                    fontFamily: 'inherit'
+                    transition: 'all 0.2s',
+                    fontFamily: 'inherit',
+                    opacity: draggedItemId === item.id ? 0.6 : 1
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#e8f5e9')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                  onMouseEnter={(e) => {
+                    if (draggedItemId !== item.id) {
+                      e.currentTarget.style.backgroundColor = '#e8f5e9';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (draggedItemId !== item.id) {
+                      e.currentTarget.style.backgroundColor = '#f5f5f5';
+                    }
+                  }}
                 >
                   {item.name}
                 </button>
