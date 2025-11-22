@@ -14,9 +14,9 @@ interface SidebarProps {
 
 export function Sidebar(props: SidebarProps) {
   const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({
-    Sites: true,
-    Docs: true,
-    Nests: true
+    sites: false,
+    docs: false,
+    nests: false
   });
   const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
   const [showEditModal, setShowEditModal] = React.useState(false);
@@ -227,8 +227,8 @@ export function Sidebar(props: SidebarProps) {
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    backgroundColor: draggedItemId === item.id ? '#e3f2fd' : '#f5f5f5',
-                    border: draggedItemId === item.id ? '2px solid #2196f3' : '1px solid #e0e0e0',
+                    backgroundColor: draggedItemId === item.id ? 'var(--md-background)' : 'var(--md-surface)',
+                    border: draggedItemId === item.id ? '2px solid #2196f3' : `1px solid var(--md-on-surface-variant)`,
                     borderRadius: '4px',
                     textAlign: 'left',
                     cursor: 'grab',
@@ -240,12 +240,12 @@ export function Sidebar(props: SidebarProps) {
                   }}
                   onMouseEnter={(e) => {
                     if (draggedItemId !== item.id) {
-                      e.currentTarget.style.backgroundColor = '#e8f5e9';
+                      e.currentTarget.style.backgroundColor = 'var(--md-background)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (draggedItemId !== item.id) {
-                      e.currentTarget.style.backgroundColor = '#f5f5f5';
+                      e.currentTarget.style.backgroundColor = 'var(--md-surface)';
                     }
                   }}
                 >

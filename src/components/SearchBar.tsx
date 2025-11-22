@@ -177,7 +177,7 @@ export const SearchBar: React.FC<SearchBarProps> = (props) => {
         <input
           ref={inputRef}
           type="text"
-          placeholder="Type #category to add filters..."
+          placeholder="Hit # to activate precision prompting"
           value={props.filters.query}
           onChange={handleInputChange}
           onKeyPress={props.onKeyPress}
@@ -259,15 +259,16 @@ export const SearchBar: React.FC<SearchBarProps> = (props) => {
         <button
           onClick={props.onSubmit}
           className={styles.buttonPrimary}
+          style={{ padding: '8px 12px' }}
         >
-          Search
+          🔍
         </button>
         <button
           onClick={props.onSave}
           className={styles.buttonSecondary}
           style={{ backgroundColor: 'var(--md-surface)', color: 'var(--md-on-surface)' }}
         >
-          Save
+          Nest
         </button>
       </div>
     </div>
